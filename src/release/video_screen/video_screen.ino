@@ -19,6 +19,8 @@
 #define C   A2
 #define D   A3
 
+#define FPS (1000/50)
+
 #define GAME_STATE_MAIN (0)
 
 int game_state = GAME_STATE_MAIN;
@@ -47,7 +49,7 @@ void setup() {
     for (int j = NOTE_DURATION; j != 0; j--) {
       matrix.fillScreen(matrix.Color333(0,0,0));
       matrix.fillRect(get_cell_x(i), get_cell_y(i), CELL_SIZE, CELL_SIZE, get_cell_color(i, j));
-      delay(33);
+      delay(FPS);
     }
   }
   matrix.fillScreen(matrix.Color333(0,0,0));
@@ -56,6 +58,17 @@ void setup() {
 }
 
 void loop() {
+  switch (game_state)
+  {
+  case GAME_STATE_MAIN:
+    game_state_main();
+    break;
+  default:
+    break;
+  }
+}
+
+void game_state_main() {
   matrix.fillScreen(matrix.Color333(0,0,0));
   for (int i = 0; i != NUM_CELLS; i++) {
     if (notes_played_len[i] > 0) {
@@ -64,7 +77,7 @@ void loop() {
       notes_played_len[i]--;
     }
   }
-  delay(16);
+  delay(FPS);
 }
 
 byte get_cell_x(int note) {
@@ -105,7 +118,7 @@ uint16_t get_cell_color(byte note, char duration) {
     case 7: r=4;g=0;b=5; break;
     case 8: r=7;g=1;b=7; break;
     case 9: r=4;g=4;b=4; break;
-    case 10: r=4;g=0;b=0; break;
+    case 10: r=7;g=4;b=0; break;
     case 11: r=5;g=3;b=1; break;
     case 12: r=4;g=4;b=0; break;
     case 13: r=0;g=4;b=4; break;
