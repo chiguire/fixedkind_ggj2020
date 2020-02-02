@@ -22,6 +22,8 @@
 #define FPS (1000/50)
 
 #define GAME_STATE_MAIN (0)
+#define GAME_STATE_CORRECT (1)
+#define GAME_STATE_INCORRECT (2)
 
 int game_state = GAME_STATE_MAIN;
 
@@ -36,6 +38,14 @@ char notes_played_len[NUM_CELLS] = {
   0,0,0,0,
   0,0,0,0,
 };
+
+#define CORRECT_COMMAND ('z')
+#define INCORRECT_COMMAND ('x')
+#define STATE_TIME (18)
+byte time_played = 0;
+uint16_t color_r_played = 0;
+uint16_t color_g_played = 0;
+uint16_t color_b_played = 0;
 
 RGBmatrixPanel matrix(A, B, C, D, CLK, LAT, OE, false);
 
@@ -64,6 +74,12 @@ void loop() {
   case GAME_STATE_MAIN:
     game_state_main();
     break;
+  case GAME_STATE_CORRECT:
+    game_state_correct();
+    break;
+  case GAME_STATE_INCORRECT:
+    game_state_incorrect();
+    break;
   default:
     break;
   }
@@ -77,6 +93,44 @@ void game_state_main() {
       matrix.fillRect(get_cell_x(i), get_cell_y(i), CELL_SIZE, CELL_SIZE, get_cell_color(i, notes_played_len[i]));
       notes_played_len[i]--;
     }
+  }
+  delay(FPS);
+}
+
+void game_state_correct() {
+  for (int i = 0; i != 32; i++)
+  {
+    float factor = (sin(((time_played+i)/16.0f)*3.14f/50.0f)+1)/2.0f;
+    matrix.drawLine(0, i, 31, i, matrix.Color888(
+      (uint16_t)(factor*color_r_played),
+      (uint16_t)(factor*color_g_played),
+      (uint16_t)(factor*color_b_played)
+    ));
+  }
+
+  time_played--;
+  if (time_played == 0)
+  {
+    game_state = GAME_STATE_MAIN;
+  }
+  delay(FPS);
+}
+
+void game_state_incorrect() {
+  for (int i = 0; i != 32; i++)
+  {
+    float factor = (sin(((time_played+i)/16.0f)*3.14f/50.0f)+1)/2.0f;
+    matrix.drawLine(i, 0, i, 31, matrix.Color888(
+      (uint16_t)(factor*color_r_played),
+      (uint16_t)(factor*color_g_played),
+      (uint16_t)(factor*color_b_played)
+    ));
+  }
+
+  time_played--;
+  if (time_played == 0)
+  {
+    game_state = GAME_STATE_MAIN;
   }
   delay(FPS);
 }
@@ -141,6 +195,11 @@ void serialEvent() {
     char inChar = (char)Serial.read();
     //Serial.print("Got char "); Serial.println(inChar);
     
+    if (game_state != GAME_STATE_MAIN) {
+      // ignore input if we're not in the main state
+      return;
+    }
+
     if (inChar == '0') { note_played = 0; }
     else if (inChar == '1') { note_played = 1; }
     else if (inChar == '2') { note_played = 2; }
@@ -160,6 +219,21 @@ void serialEvent() {
 
     if (note_played != NONE_NOTE) {
       notes_played_len[note_played] = NOTE_DURATION;
+    }
+
+    if (inChar == CORRECT_COMMAND) { 
+      game_state = GAME_STATE_CORRECT;
+      time_played = STATE_TIME;
+      color_r_played = 64;
+      color_g_played = 224;
+      color_b_played = 64;
+    }
+    else if (inChar == INCORRECT_COMMAND) {
+      game_state = GAME_STATE_INCORRECT;
+      time_played = STATE_TIME;
+      color_r_played = 224;
+      color_g_played = 64;
+      color_b_played = 64;
     }
   }
 }

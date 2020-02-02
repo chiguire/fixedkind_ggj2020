@@ -19,6 +19,10 @@ int melody_note_currently_length = 0;
 
 String obtained_melody = "";
 
+static final int VIDEO_STATE_TIME = 150;
+static final char SCREEN_CORRECT_MESSAGE = 'z';
+static final char SCREEN_INCORRECT_MESSAGE = 'x';
+
 void setup() {
   size(800, 500);
   background(255);
@@ -54,6 +58,12 @@ void draw()
     break;
   case WAITING_MESSAGE:
     waiting_message_state();
+    break;
+  case CORRECT_MESSAGE:
+    correct_message_state();
+    break;
+  case INCORRECT_MESSAGE:
+    incorrect_message_state();
     break;
   }
   ticks.increase();
@@ -98,6 +108,12 @@ void exit_current_state(GameStateEnum st)
   case WAITING_MESSAGE:
     waiting_message_state_exit();
     break;
+  case CORRECT_MESSAGE:
+    correct_message_state_exit();
+    break;
+  case INCORRECT_MESSAGE:
+    incorrect_message_state_exit();
+    break;
   }
 }
 
@@ -113,6 +129,12 @@ void enter_new_state(GameStateEnum st)
     break;
   case WAITING_MESSAGE:
     waiting_message_state_enter();
+    break;
+  case CORRECT_MESSAGE:
+    correct_message_state_enter();
+    break;
+  case INCORRECT_MESSAGE:
+    incorrect_message_state_enter();
     break;
   }
 }
@@ -196,6 +218,17 @@ String generate_melody(int length)
   return result;
 }
 
+boolean is_it_the_same_melody(String input, String generated) {
+  for (int i = 0; i != input.length(); i++)
+  {
+    if (input.charAt(i) != generated.charAt(i*2))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 int current_frame_rate() {
   return (int)(frameRate/5);
 }
@@ -212,6 +245,21 @@ void waiting_message_state()
     if (inChar != -1 || inChar != 0xffff) {
       screenPort.write(inChar);
       obtained_melody += inChar;
+      ticks.setWaitingTicks(current_frame_rate()*4);
+    }
+  }
+
+  if (ticks.triggered()) {
+    if (obtained_melody.length() >= melody_length)
+    {
+      if (is_it_the_same_melody(obtained_melody, melody))
+      {
+        set_state(GameStateEnum.CORRECT_MESSAGE);
+      }
+      else
+      {
+        set_state(GameStateEnum.INCORRECT_MESSAGE);
+      }
     }
   }
 }
@@ -224,7 +272,45 @@ void waiting_message_state_enter()
 
 void waiting_message_state_exit()
 {
+  trellisPort.write(TRELLIS_DISABLE_INPUT);
+}
 
+void correct_message_state()
+{
+  if (ticks.triggered())
+  {
+    set_state(GameStateEnum.REPRODUCING_MESSAGE);
+  }
+}
+
+void correct_message_state_enter()
+{
+  screenPort.write(SCREEN_CORRECT_MESSAGE);
+  ticks.setWaitingTicks(VIDEO_STATE_TIME);
+}
+
+void correct_message_state_exit()
+{
+  ticks.setNoWaiting();
+}
+
+void incorrect_message_state()
+{
+  if (ticks.triggered())
+  {
+    set_state(GameStateEnum.REPRODUCING_MESSAGE);
+  }
+}
+
+void incorrect_message_state_enter()
+{
+  screenPort.write(SCREEN_INCORRECT_MESSAGE);
+  ticks.setWaitingTicks(VIDEO_STATE_TIME);
+}
+
+void incorrect_message_state_exit()
+{
+  ticks.setNoWaiting();
 }
 /*
 void X_state()
