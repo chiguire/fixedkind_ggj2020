@@ -43,28 +43,44 @@ void setup() {
 
   matrix.fillScreen(matrix.Color333(0,0,0));
   
-  for (int i = 0; i != NUM_CELLS; i++) {
-    for (int j = NOTE_DURATION; j != 0; j--) {
-      matrix.fillScreen(matrix.Color333(0,0,0));
-      matrix.fillRect(get_cell_x(i), get_cell_y(i), CELL_SIZE, CELL_SIZE, get_cell_color(i, j));
-      delay(33);
-    }
-  }
+  matrix.fillRect(0, 0, 8, 8, 63497);
+  delay(100);
+  matrix.fillRect(8, 0, 8, 8, 64644);
+  delay(100);
+  matrix.fillRect(16, 0, 8, 8, 65504);
+  delay(100);
+  matrix.fillRect(24, 0, 8, 8, 57316);
+  delay(100);
+  matrix.fillRect(0, 8, 8, 8, 9641);
+  delay(100);
+  matrix.fillRect(8, 8, 8, 8, 20479);
+  delay(100);
+  matrix.fillRect(16, 8, 8, 8, 1179);
+  delay(100);
+  matrix.fillRect(24, 8, 8, 8, 36886);
+  delay(100);
+  matrix.fillRect(0, 16, 8, 8, 63807);
+  delay(100);
+  matrix.fillRect(8, 16, 8, 8, 38034);
+  delay(100);
+  matrix.fillRect(16, 16, 8, 8, 36864);
+  delay(100);
+  matrix.fillRect(24, 16, 8, 8, 45924);
+  delay(100);
+  matrix.fillRect(0, 24, 8, 8, 38016);
+  delay(100);
+  matrix.fillRect(8, 24, 8, 8, 1170);
+  delay(100);
+  matrix.fillRect(16, 24, 8, 8, 18);
+  delay(100);
+  matrix.fillRect(24, 24, 8, 8, 65238);
+  delay(100);
+  
   matrix.fillScreen(matrix.Color333(0,0,0));
-  // Do not ever uncomment Serial.print* lines or this won't work
-  //Serial.println("Setup finished");
+  Serial.println("Setup finished");
 }
 
 void loop() {
-  matrix.fillScreen(matrix.Color333(0,0,0));
-  for (int i = 0; i != NUM_CELLS; i++) {
-    if (notes_played_len[i] > 0) {
-      //Serial.print(i); Serial.print(" "); Serial.println((int)notes_played_len[i]);
-      matrix.fillRect(get_cell_x(i), get_cell_y(i), CELL_SIZE, CELL_SIZE, get_cell_color(i, notes_played_len[i]));
-      notes_played_len[i]--;
-    }
-  }
-  delay(16);
 }
 
 byte get_cell_x(int note) {
@@ -112,40 +128,13 @@ uint16_t get_cell_color(byte note, char duration) {
     case 14: r=0;g=0;b=4; break;
     case 15: r=7;g=6;b=5; break;
   }
-  char inv_duration = NOTE_DURATION-duration;
 
   return matrix.Color333(
-    (r-inv_duration)>0?(r-inv_duration):0,
-    (g-inv_duration)>0?(g-inv_duration):0,
-    (b-inv_duration)>0?(b-inv_duration):0
+    (r-(NOTE_DURATION-duration))>0?(r-(NOTE_DURATION-duration)):0,
+    (g-(NOTE_DURATION-duration))>0?(g-(NOTE_DURATION-duration)):0,
+    (b-(NOTE_DURATION-duration))>0?(b-(NOTE_DURATION-duration)):0
   );
 }
 
 void serialEvent() {
-    while (Serial.available() > 0) {
-    byte note_played = NONE_NOTE;
-    char inChar = (char)Serial.read();
-    //Serial.print("Got char "); Serial.println(inChar);
-    
-    if (inChar == '0') { note_played = 0; }
-    else if (inChar == '1') { note_played = 1; }
-    else if (inChar == '2') { note_played = 2; }
-    else if (inChar == '3') { note_played = 3; }
-    else if (inChar == '4') { note_played = 4; }
-    else if (inChar == '5') { note_played = 5; }
-    else if (inChar == '6') { note_played = 6; }
-    else if (inChar == '7') { note_played = 7; }
-    else if (inChar == '8') { note_played = 8; }
-    else if (inChar == '9') { note_played = 9; }
-    else if (inChar == 'a') { note_played = 10; }
-    else if (inChar == 'b') { note_played = 11; }
-    else if (inChar == 'c') { note_played = 12; }
-    else if (inChar == 'd') { note_played = 13; }
-    else if (inChar == 'e') { note_played = 14; }
-    else if (inChar == 'f') { note_played = 15; }
-
-    if (note_played != NONE_NOTE) {
-      notes_played_len[note_played] = NOTE_DURATION;
-    }
-  }
 }

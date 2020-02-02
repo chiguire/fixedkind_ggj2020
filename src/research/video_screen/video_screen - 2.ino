@@ -44,27 +44,30 @@ void setup() {
   matrix.fillScreen(matrix.Color333(0,0,0));
   
   for (int i = 0; i != NUM_CELLS; i++) {
-    for (int j = NOTE_DURATION; j != 0; j--) {
-      matrix.fillScreen(matrix.Color333(0,0,0));
-      matrix.fillRect(get_cell_x(i), get_cell_y(i), CELL_SIZE, CELL_SIZE, get_cell_color(i, j));
-      delay(33);
-    }
+  //  for (int j = NOTE_DURATION; j != 0; j--) {
+      byte x = get_cell_x(i);
+      byte y = get_cell_y(i);
+      uint16_t color = get_cell_color(i, NOTE_DURATION);
+      Serial.print("X: "); Serial.print(x); Serial.print(" / Y: "); Serial.print(y); Serial.print(" / C: "); Serial.println(color);
+      //matrix.fillRect(x, y, CELL_SIZE, CELL_SIZE, color);
+      delay(100);
+  //  }
   }
   matrix.fillScreen(matrix.Color333(0,0,0));
-  // Do not ever uncomment Serial.print* lines or this won't work
-  //Serial.println("Setup finished");
+  Serial.println("Setup finished");
 }
 
 void loop() {
   matrix.fillScreen(matrix.Color333(0,0,0));
   for (int i = 0; i != NUM_CELLS; i++) {
     if (notes_played_len[i] > 0) {
-      //Serial.print(i); Serial.print(" "); Serial.println((int)notes_played_len[i]);
-      matrix.fillRect(get_cell_x(i), get_cell_y(i), CELL_SIZE, CELL_SIZE, get_cell_color(i, notes_played_len[i]));
+      byte x = get_cell_x(i);
+      byte y = get_cell_y(i);
+      matrix.fillRect(x, y, CELL_SIZE, CELL_SIZE, get_cell_color(i, notes_played_len[i]));
       notes_played_len[i]--;
     }
   }
-  delay(16);
+  delay(500);
 }
 
 byte get_cell_x(int note) {
@@ -112,20 +115,19 @@ uint16_t get_cell_color(byte note, char duration) {
     case 14: r=0;g=0;b=4; break;
     case 15: r=7;g=6;b=5; break;
   }
-  char inv_duration = NOTE_DURATION-duration;
 
   return matrix.Color333(
-    (r-inv_duration)>0?(r-inv_duration):0,
-    (g-inv_duration)>0?(g-inv_duration):0,
-    (b-inv_duration)>0?(b-inv_duration):0
+    (r-(NOTE_DURATION-duration))>0?(r-(NOTE_DURATION-duration)):0,
+    (g-(NOTE_DURATION-duration))>0?(g-(NOTE_DURATION-duration)):0,
+    (b-(NOTE_DURATION-duration))>0?(b-(NOTE_DURATION-duration)):0
   );
 }
 
 void serialEvent() {
-    while (Serial.available() > 0) {
+  while (Serial.available() > 0) {
     byte note_played = NONE_NOTE;
     char inChar = (char)Serial.read();
-    //Serial.print("Got char "); Serial.println(inChar);
+    Serial.print("Got char "); Serial.println(inChar);
     
     if (inChar == '0') { note_played = 0; }
     else if (inChar == '1') { note_played = 1; }
