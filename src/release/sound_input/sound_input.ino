@@ -33,7 +33,7 @@ Adafruit_NeoTrellis trellis;
 
 #define FPS (1000/50)
 
-#define NOTE_BEGIN 36
+#define NOTE_BEGIN 48
 #define NOTES_LEN 16
 int notes[] = { 0,   2,  4,  7,
                 9,  12, 14, 16, 
@@ -67,12 +67,16 @@ int note_duration[] = {
   0, 0, 0, 0,
 };
 
+bool input_enabled = true;
+
 SoftwareSerial VS1053_MIDI(0, 2); // TX only, do not use the 'rx' side
 // on a Mega/Leonardo you may have to change the pin to one that 
 // software serial support uses OR use a hardware serial port!
 
 //define a callback for key presses
 TrellisCallback blink(keyEvent evt){
+  if (!input_enabled) { return; }
+  
   // Check is the pad pressed?
   if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
     pressed[evt.bit.NUM] = true;
@@ -265,5 +269,41 @@ char int_to_hex(int i) {
   case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 9: return '0' + i;
   case 10: case 11: case 12: case 13: case 14: case 15: return 'a' + (i-10);
   default: 'x';
+  }
+}
+
+void serialEvent() {
+  while (Serial.available() > 0) {
+    byte note_played = -1;
+    char inChar = (char)Serial.read();
+    //Serial.print("Got char "); Serial.println(inChar);
+    
+    if (inChar == '0') { note_played = 0; }
+    else if (inChar == '1') { note_played = 1; }
+    else if (inChar == '2') { note_played = 2; }
+    else if (inChar == '3') { note_played = 3; }
+    else if (inChar == '4') { note_played = 4; }
+    else if (inChar == '5') { note_played = 5; }
+    else if (inChar == '6') { note_played = 6; }
+    else if (inChar == '7') { note_played = 7; }
+    else if (inChar == '8') { note_played = 8; }
+    else if (inChar == '9') { note_played = 9; }
+    else if (inChar == 'a') { note_played = 10; }
+    else if (inChar == 'b') { note_played = 11; }
+    else if (inChar == 'c') { note_played = 12; }
+    else if (inChar == 'd') { note_played = 13; }
+    else if (inChar == 'e') { note_played = 14; }
+    else if (inChar == 'f') { note_played = 15; }
+
+    if (note_played != -1) {
+      pressed[note_played] = true;
+      prev_pressed[note_played] = false;
+    }
+
+    if (inChar == 'z') {
+      input_enabled = true;
+    } else if (inChar == 'x') {
+      input_enabled = false;
+    }
   }
 }

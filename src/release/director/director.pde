@@ -11,6 +11,9 @@ byte[] screenBytes = new byte[]{0, 0};
 boolean screenReady;
 boolean trellisReady;
 
+String melody = "";
+int melody_length = 5;
+
 void setup() {
   size(800, 500);
   background(255);
@@ -25,6 +28,8 @@ void setup() {
   printArray(Serial.list());
   screenPort = new Serial(this, "COM4", 9600);
   trellisPort = new Serial(this, "COM5", 9600);
+
+  randomSeed(100);
 }
 
 void draw()
@@ -58,7 +63,9 @@ void drawGameState()
   text("Waiting ticks: " + ticks.toString(), x0, y0+yd*1);
   text("Screen ready: " + screenReady, x0, y0+yd*2);
   text("Trellis ready: " + trellisReady, x0, y0+yd*3);
-  //text("", x0, y0+yd*4);
+  text("Melody: " + melody, x0, y0+yd*4);
+  text("Melody length: " + melody_length, x0, y0+yd*5);
+  //text("", x0, y0+yd*6);
 }
 
 
@@ -135,7 +142,25 @@ void reproducing_message_state()
 
 void reproducing_message_state_enter()
 {
-  
+  melody = generate_melody(melody_length);
+  for (int i = 0; i < melody.length(); i += 2)
+  {
+    screenPort.write(melody.charAt(i));
+  }
+}
+
+String generate_melody(int length)
+{
+  String available_notes = "0123456789abcdef";
+  String available_lengths = "123";
+
+  String result = "";
+  for (int i = 0; i != length; ++i)
+  {
+    result += available_notes.charAt((int)(random(1)*available_notes.length()));
+    result += available_lengths.charAt((int)(random(1)*available_lengths.length()));
+  }
+  return result;
 }
 
 void reproducing_message_state_exit()

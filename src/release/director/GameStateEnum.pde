@@ -1,0 +1,6 @@
+public enum GameStateEnum
+{
+  START_STATE,
+  REPRODUCING_MESSAGE,
+  WAITING_MESSAGE
+}
