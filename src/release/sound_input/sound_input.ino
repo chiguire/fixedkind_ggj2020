@@ -123,6 +123,7 @@ void setup() {
     trellis.pixels.show();
     delay(20);
   }
+  Serial.println("ready0");
 }
 
 void loop() {

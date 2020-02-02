@@ -55,6 +55,7 @@ void setup() {
   matrix.fillScreen(matrix.Color333(0,0,0));
   // Do not ever uncomment Serial.print* lines or this won't work
   //Serial.println("Setup finished");
+  Serial.print('r');
 }
 
 void loop() {
