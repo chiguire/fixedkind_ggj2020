@@ -69,13 +69,27 @@ int note_duration[] = {
 
 bool input_enabled = true;
 
+// The length of scale_offsets
+#define SCALE_OFFSET_MAX (5)
+int scale_offsets[] = { -2, -7, 0, 7, 2 };
+int scale_offset_index = 2;
+
+#define SCALE_DOWN_PIN 50
+#define SCALE_UP_PIN 48
+bool scale_down_curr_pressed = false;
+bool scale_down_prev_pressed = false;
+bool scale_up_curr_pressed = false;
+bool scale_up_prev_pressed = false;
+bool just_pressed_scale_down() { return scale_down_curr_pressed && !scale_down_prev_pressed; }
+bool just_pressed_scale_up() { return scale_up_curr_pressed && !scale_up_prev_pressed; }
+
 SoftwareSerial VS1053_MIDI(0, 2); // TX only, do not use the 'rx' side
 // on a Mega/Leonardo you may have to change the pin to one that 
 // software serial support uses OR use a hardware serial port!
 
 //define a callback for key presses
 TrellisCallback blink(keyEvent evt){
-  if (!input_enabled) { return; }
+  if (!input_enabled) { return 0; }
 
   // Check is the pad pressed?
   if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
@@ -127,16 +141,36 @@ void setup() {
     trellis.pixels.show();
     delay(20);
   }
+
+  pinMode(SCALE_DOWN_PIN, INPUT);
+  pinMode(SCALE_UP_PIN, INPUT);
+
   Serial.println("ready0");
 }
 
 void loop() {
   trellis.read();  // interrupt management does all the work! :)
 
+  scale_down_curr_pressed = digitalRead(SCALE_DOWN_PIN) == HIGH;
+  scale_up_curr_pressed = digitalRead(SCALE_UP_PIN) == HIGH;
+
+  if (just_pressed_scale_down())
+  {
+    if (scale_offset_index > 0) {
+      scale_offset_index--;
+    }
+  }
+  else if (just_pressed_scale_up())
+  {
+    if (scale_offset_index < (SCALE_OFFSET_MAX-1)) {
+      scale_offset_index++;
+    }
+  }
+
   for (int i = 0; i != NOTES_LEN; i++) {
     if (just_pressed(i)) {
       note_duration[i] = NOTE_DURATION;
-      midiNoteOn(0, NOTE_BEGIN+notes[i], 127);
+      midiNoteOn(0, NOTE_BEGIN+scale_offsets[scale_offset_index]+notes[i], 127);
       trellis.pixels.setPixelColor(i, get_cell_color(i, (NOTE_DURATION/2))); //on rising
       if (input_enabled) {
         Serial.print(int_to_hex(i));
@@ -159,12 +193,14 @@ void loop() {
       trellis.pixels.setPixelColor(i, get_cell_color(i, (note_duration[i]/2))); //on rising
 
       if (note_duration[i] == 0) {
-        midiNoteOff(0, NOTE_BEGIN+notes[i], 127);
+        midiNoteOff(0, NOTE_BEGIN+scale_offsets[scale_offset_index]+notes[i], 127);
         trellis.pixels.setPixelColor(i, 0); //off falling
       }
     }
   }
 
+  scale_down_prev_pressed = scale_down_curr_pressed;
+  scale_up_prev_pressed = scale_up_curr_pressed;
 }
 
 
@@ -270,13 +306,14 @@ char int_to_hex(int i) {
   {
   case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 9: return '0' + i;
   case 10: case 11: case 12: case 13: case 14: case 15: return 'a' + (i-10);
-  default: 'x';
+  default: return 'x';
   }
+  return 'x';
 }
 
 void serialEvent() {
   while (Serial.available() > 0) {
-    byte note_played = -1;
+    int note_played = -1;
     char inChar = (char)Serial.read();
     //Serial.print("Got char "); Serial.println(inChar);
     
