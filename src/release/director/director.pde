@@ -6,17 +6,23 @@ WaitingTicks ticks;
 Serial screenPort;
 Serial trellisPort;
 
-byte[] screenBytes = new byte[]{0, 0};
+static final char TRELLIS_ENABLE_INPUT = 'z';
+static final char TRELLIS_DISABLE_INPUT = 'x';
 
 boolean screenReady;
 boolean trellisReady;
 
 String melody = "";
 int melody_length = 5;
+int melody_note_currently_played = 0;
+int melody_note_currently_length = 0;
+
+String obtained_melody = "";
 
 void setup() {
   size(800, 500);
   background(255);
+  frameRate(50); // The devices are set to the same frequency
   
   gameState = GameStateEnum.START_STATE;
   ticks = new WaitingTicks();
@@ -65,6 +71,9 @@ void drawGameState()
   text("Trellis ready: " + trellisReady, x0, y0+yd*3);
   text("Melody: " + melody, x0, y0+yd*4);
   text("Melody length: " + melody_length, x0, y0+yd*5);
+  text("Melody current note: " + melody_note_currently_played, x0, y0+yd*6);
+  text("Melody current note len: " + melody_note_currently_length, x0, y0+yd*7);
+  text("Obtained melody: " + obtained_melody, x0, y0+yd*8);
   //text("", x0, y0+yd*6);
 }
 
@@ -137,16 +146,40 @@ void start_state_enter() {}
 
 void reproducing_message_state()
 {
+  if (ticks.triggered())
+  {
+    if (melody_note_currently_length == 0)
+    {
+      melody_note_currently_played += 2;
 
+      if (melody_note_currently_played < melody.length())
+      {
+        melody_note_currently_length = Character.getNumericValue(melody.charAt(melody_note_currently_played+1));
+        
+        screenPort.write(melody.charAt(melody_note_currently_played));
+        trellisPort.write(melody.charAt(melody_note_currently_played));
+        ticks.setWaitingTicks(current_frame_rate());
+      }
+      else
+      {
+        set_state(GameStateEnum.WAITING_MESSAGE);
+      }
+    }
+    else
+    {
+      melody_note_currently_length--;
+      ticks.setWaitingTicks(current_frame_rate());
+    }
+  }
 }
 
 void reproducing_message_state_enter()
 {
+  trellisPort.write(TRELLIS_DISABLE_INPUT);
   melody = generate_melody(melody_length);
-  for (int i = 0; i < melody.length(); i += 2)
-  {
-    screenPort.write(melody.charAt(i));
-  }
+  melody_note_currently_played = -2;
+  melody_note_currently_length = 0;
+  ticks.setWaitingTicks(current_frame_rate());
 }
 
 String generate_melody(int length)
@@ -163,19 +196,30 @@ String generate_melody(int length)
   return result;
 }
 
+int current_frame_rate() {
+  return (int)(frameRate/5);
+}
+
 void reproducing_message_state_exit()
 {
-
+  ticks.setNoWaiting();
 }
 
 void waiting_message_state()
 {
-
+  if (trellisPort.available() > 0) {
+    char inChar = trellisPort.readChar();
+    if (inChar != -1 || inChar != 0xffff) {
+      screenPort.write(inChar);
+      obtained_melody += inChar;
+    }
+  }
 }
 
 void waiting_message_state_enter()
 {
-  
+  obtained_melody = "";
+  trellisPort.write(TRELLIS_ENABLE_INPUT);
 }
 
 void waiting_message_state_exit()
@@ -183,17 +227,17 @@ void waiting_message_state_exit()
 
 }
 /*
-void reproducing_message_state()
+void X_state()
 {
 
 }
 
-void reproducing_message_state_enter()
+void X_state_enter()
 {
   
 }
 
-void reproducing_message_state_exit()
+void X_state_exit()
 {
 
 }

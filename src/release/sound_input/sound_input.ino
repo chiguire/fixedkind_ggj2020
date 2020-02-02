@@ -76,7 +76,7 @@ SoftwareSerial VS1053_MIDI(0, 2); // TX only, do not use the 'rx' side
 //define a callback for key presses
 TrellisCallback blink(keyEvent evt){
   if (!input_enabled) { return; }
-  
+
   // Check is the pad pressed?
   if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
     pressed[evt.bit.NUM] = true;
@@ -138,7 +138,9 @@ void loop() {
       note_duration[i] = NOTE_DURATION;
       midiNoteOn(0, NOTE_BEGIN+notes[i], 127);
       trellis.pixels.setPixelColor(i, get_cell_color(i, (NOTE_DURATION/2))); //on rising
-      Serial.print(int_to_hex(i));
+      if (input_enabled) {
+        Serial.print(int_to_hex(i));
+      }
     }
   }
 
